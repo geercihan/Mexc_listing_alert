@@ -49,7 +49,7 @@ def search_contract_coingecko(symbol):
     except Exception:
         return None
 
-# === Search for contract using CoinMarketCap (HTML scraping) ===
+# === Search for contract using CoinMarketCap (Improved for all networks) ===
 def search_contract_coinmarketcap(slug):
     try:
         url = f"https://coinmarketcap.com/currencies/{slug}/"
@@ -58,8 +58,20 @@ def search_contract_coinmarketcap(slug):
         if res.status_code != 200:
             return None
         soup = BeautifulSoup(res.text, "html.parser")
-        links = soup.find_all("a", href=True)
         result = []
+
+        # Modern format extraction (Solana, Ethereum, BSC, etc.)
+        for div in soup.find_all("div", class_="content___Mm0HH"):
+            spans = div.find_all("span")
+            if not spans or not div.text:
+                continue
+            chain = spans[0].text.strip().replace(":", "")
+            address = spans[-1].text.strip()
+            if address and len(address) > 10:
+                result.append(f"{chain}: {address}")
+
+        # Legacy format fallback
+        links = soup.find_all("a", href=True)
         for link in links:
             if "/currencies/" in link["href"] and "/contract/" in link["href"]:
                 parts = link["href"].split("/")
@@ -67,6 +79,7 @@ def search_contract_coinmarketcap(slug):
                     chain = parts[-2].capitalize()
                     address = parts[-1]
                     result.append(f"{chain}: {address}")
+
         return "\n".join(set(result)) if result else None
     except Exception:
         return None
@@ -128,7 +141,7 @@ def parse_twitter_listings(seen_titles):
         for line in tweets:
             lower = line.lower()
             if any(keyword in lower for keyword in keywords):
-                tweet_id = hash(line)  # crude but effective deduplication
+                tweet_id = hash(line)
                 if str(tweet_id) in seen_titles:
                     continue
                 save_seen_title(str(tweet_id))
