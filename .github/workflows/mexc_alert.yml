@@ -19,8 +19,7 @@ jobs:
           python-version: '3.11'
 
       - name: 📦 Install dependencies
-        run: |
-          pip install requests feedparser beautifulsoup4 pycoingecko
+        run: pip install -r requirements.txt
 
       - name: 🚀 Run Mexc Listing Bot
         env:
