@@ -2,8 +2,8 @@ name: 🚨 Mexc Listing Alert Bot
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
+    - cron: '*/5 * * * *'  # Run every 5 minutes
+  workflow_dispatch:       # Allow manual trigger
 
 jobs:
   run-bot:
@@ -18,8 +18,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies
-        run: pip install -r requirements.txt
+      - name: 📦 Install Python dependencies
+        run: |
+          pip install requests feedparser beautifulsoup4 pycoingecko
+
+      - name: ⚙️ Install snscrape (for Twitter support)
+        run: |
+          pip install snscrape
 
       - name: 🚀 Run Mexc Listing Bot
         env:
