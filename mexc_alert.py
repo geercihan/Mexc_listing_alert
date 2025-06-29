@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from pycoingecko import CoinGeckoAPI
 import subprocess
+import json
 
 # === Environment Variables ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -129,29 +130,32 @@ def parse_newlisting_page(seen_titles):
     except Exception as e:
         send_telegram_message(f"⚠ Error reading /newlisting page:\n{e}")
 
-# === Parse Twitter Source using snscrape ===
+# === ✅ UPDATED: Parse Twitter Source using snscrape + JSON ===
 def parse_twitter_listings(seen_titles):
     try:
         keywords = [
-    "will list", "listing", "lists", "to be listed", "new listing",
-    "initial listing", "listed", "listing soon", "available for trading"
-]
-
+            "will list", "listing", "lists", "to be listed", "new listing",
+            "initial listing", "listed", "listing soon", "available for trading"
+        ]
         result = subprocess.run(
-            ["snscrape", "--max-results", "10", "twitter-user:MEXC_Listings"],
+            ["snscrape", "--jsonl", "--max-results", "10", "twitter-user:MEXC_Listings"],
             capture_output=True, text=True
         )
-        tweets = result.stdout.splitlines()
-        for line in tweets:
-            lower = line.lower()
-            if any(keyword in lower for keyword in keywords):
-                tweet_id = hash(line)
-                if str(tweet_id) in seen_titles:
+        tweets = result.stdout.strip().split("\n")
+        for raw in tweets:
+            if not raw.strip():
+                continue
+            tweet = json.loads(raw)
+            content = tweet.get("content", "")
+            if any(keyword in content.lower() for keyword in keywords):
+                tweet_id = str(tweet.get("id"))
+                if tweet_id in seen_titles:
                     continue
-                save_seen_title(str(tweet_id))
+                save_seen_title(tweet_id)
                 timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+                url = tweet.get("url", "")
                 message = f"🚨 New Token Listing (from Twitter)\n\n*Detected:* {timestamp}\n"
-                message += f"Tweet Content:\n{line}"
+                message += f"[View Tweet]({url})\n\nTweet Content:\n{content}"
                 send_telegram_message(message)
     except Exception as e:
         send_telegram_message(f"⚠ Error reading tweets:\n{e}")
