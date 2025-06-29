@@ -132,7 +132,11 @@ def parse_newlisting_page(seen_titles):
 # === Parse Twitter Source using snscrape ===
 def parse_twitter_listings(seen_titles):
     try:
-        keywords = ["will list", "listing", "lists", "to be listed", "new listing"]
+        keywords = [
+    "will list", "listing", "lists", "to be listed", "new listing",
+    "initial listing", "listed", "listing soon", "available for trading"
+]
+
         result = subprocess.run(
             ["snscrape", "--max-results", "10", "twitter-user:MEXC_Listings"],
             capture_output=True, text=True
